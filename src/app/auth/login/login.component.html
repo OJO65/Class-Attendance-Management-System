@@ -1,0 +1,78 @@
+<div class="container shadow p-3 mb-5 bg-body-tertiary rounded">
+  <h1>LOGIN</h1>
+  <hr />
+  <form (ngSubmit)="onSubmit(loginForm)" #loginForm="ngForm">
+    <!-- Admission Number Field -->
+    <div class="form-floating mb-3">
+      <input
+        type="text"
+        class="form-control"
+        id="floatingInput"
+        placeholder="Admission Number"
+        ngModel
+        name="admissionNumber"
+        required
+        minlength="4"
+        [class.is-invalid]="admissionNumber.invalid && admissionNumber.touched"
+        #admissionNumber="ngModel"
+      />
+      <label for="floatingInput">Admission Number</label>
+      <!-- Validation Error Messages -->
+      <div
+        *ngIf="admissionNumber.invalid && admissionNumber.touched"
+        class="form-text text-danger"
+      >
+        <small *ngIf="admissionNumber.errors?.['required']"
+          >Admission number is required!</small
+        >
+        <small *ngIf="admissionNumber.errors?.['minlength']">
+          Admission number must be at least 4 characters long!
+        </small>
+      </div>
+    </div>
+
+    <!-- Password Field -->
+    <div class="form-floating mb-3">
+      <input
+        type="password"
+        class="form-control"
+        id="floatingPassword"
+        placeholder="Password"
+        ngModel
+        name="password"
+        required
+        minlength="6"
+        [class.is-invalid]="password.invalid && password.touched"
+        #password="ngModel"
+      />
+      <label for="floatingPassword">Password</label>
+      <!-- Validation Error Messages -->
+      <div
+        *ngIf="password.invalid && password.touched"
+        class="form-text text-danger"
+      >
+        <small *ngIf="password.errors?.['required']"
+          >Password is required!</small
+        >
+        <small *ngIf="password.errors?.['minlength']">
+          Password must be at least 6 characters long!
+        </small>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div id="login" class="loginbtn">
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="loginForm.invalid"
+        [ngClass]="{
+          'disabled-cursor': loginForm.invalid,
+          'pointer-cursor': loginForm.valid
+        }"
+      >
+        LOGIN
+      </button>
+    </div>
+  </form>
+</div>
