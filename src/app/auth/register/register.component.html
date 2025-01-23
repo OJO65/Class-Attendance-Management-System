@@ -1,1 +1,42 @@
-<p>register works!</p>
+<div class="container shadow p-3 mb-5 bg-body-tertiary rounded">
+    <h1>REGISTER</h1>
+    <hr />
+    <form [formGroup]="registerDetailsForm" (ngSubmit)="submit()">
+      <div class="form-floating mb-3">
+        <input
+          type="text"
+          formControlName="admissionNumber"
+          class="form-control"
+          id="floatingInput"
+          placeholder="Admission Number"
+          [ngClass]="{'is-invalid': fieldIsInvalid('admissionNumber')}"
+        />
+        <label for="floatingInput">Admission Number</label>
+        <div *ngIf="fieldIsInvalid('admissionNumber')" class="invalid-feedback">
+          Please enter a valid admission number!
+        </div>
+      </div>
+  
+      <div class="form-floating mb-3">
+        <input
+          type="password"
+          formControlName="password"
+          class="form-control"
+          id="floatingPassword"
+          placeholder="Password"
+          [ngClass]="{'is-invalid': fieldIsInvalid('password')}"
+        />
+        <label for="floatingPassword">Password</label>
+        <div *ngIf="fieldIsInvalid('password')" class="invalid-feedback">
+          Password is required!
+        </div>
+      </div>
+  
+      <div id="register" class="registerbtn">
+        <button type="submit" class="btn btn-primary" [disabled]="registerDetailsForm.invalid">
+          REGISTER
+        </button>
+      </div>
+    </form>
+  </div>
+  
