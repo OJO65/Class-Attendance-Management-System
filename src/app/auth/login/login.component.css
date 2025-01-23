@@ -45,3 +45,10 @@ h1 {
 button[disabled]:hover {
   cursor: not-allowed;
 }
+
+.register-link {
+  text-align: center;
+  margin-top: 10px;
+  cursor: pointer;
+  text-decoration: underline;
+}
