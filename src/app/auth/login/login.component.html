@@ -1,4 +1,4 @@
-<div class="container shadow p-3 mb-5 bg-body-tertiary rounded">
+<div class="container shadow p-3 mt-5 text-center bg-body-tertiary rounded align-items-center w-25 py-5 px-5">
   <h1>LOGIN</h1>
   <hr />
   <form (ngSubmit)="onSubmit(loginForm)" #loginForm="ngForm">
@@ -64,7 +64,7 @@
     <div id="login" class="loginbtn">
       <button
         type="submit"
-        class="btn btn-primary"
+        class="btn btn-primary pointer-cursor"
         [disabled]="loginForm.invalid"
         [ngClass]="{
           'disabled-cursor': loginForm.invalid,
@@ -76,6 +76,6 @@
     </div>
   </form>
   <div class="register-link">
-    <a [routerLink]="['/register']">Register Here</a>
+    <a class="text-decoration-none" [routerLink]="['/register']">Register Here</a>
   </div>
 </div>
