@@ -1,81 +1,93 @@
-<div class="container shadow p-3 mt-5 text-center bg-body-tertiary rounded align-items-center w-25 py-5 px-5">
-  <h1>LOGIN</h1>
-  <hr />
-  <form (ngSubmit)="onSubmit(loginForm)" #loginForm="ngForm">
-    <!-- Admission Number Field -->
-    <div class="form-floating mb-3">
-      <input
-        type="text"
-        class="form-control"
-        id="floatingInput"
-        placeholder="Admission Number"
-        ngModel
-        name="admissionNumber"
-        required
-        minlength="4"
-        [class.is-invalid]="admissionNumber.invalid && admissionNumber.touched"
-        #admissionNumber="ngModel"
-      />
-      <label for="floatingInput">Admission Number</label>
-      <!-- Validation Error Messages -->
-      <div
-        *ngIf="admissionNumber.invalid && admissionNumber.touched"
-        class="form-text text-danger"
-      >
-        <small *ngIf="admissionNumber.errors?.['required']"
-          >Admission number is required!</small
-        >
-        <small *ngIf="admissionNumber.errors?.['minlength']">
-          Admission number must be at least 4 characters long!
-        </small>
-      </div>
-    </div>
+<div class="lg:flex flex-row lg:mx-10 lg:mt-24 lg:w-[90vw] my-20">
+  <div class="text-center lg:w-1/2 lg:mt-40">
+    <h1>Class Attendance Management System</h1>
+    <p>
+      CAMS helps you keep track of your class attendance and maintain a good
+      score!
+    </p>
+  </div>
 
-    <!-- Password Field -->
-    <div class="form-floating mb-3">
-      <input
-        type="password"
-        class="form-control"
-        id="floatingPassword"
-        placeholder="Password"
-        ngModel
-        name="password"
-        required
-        minlength="6"
-        [class.is-invalid]="password.invalid && password.touched"
-        #password="ngModel"
-      />
-      <label for="floatingPassword">Password</label>
-      <!-- Validation Error Messages -->
-      <div
-        *ngIf="password.invalid && password.touched"
-        class="form-text text-danger"
-      >
-        <small *ngIf="password.errors?.['required']"
-          >Password is required!</small
+  <div
+    class="mt-5 p-5 mx-auto w-[75vw] sm:w-[80vw] md:w-[60vw] lg:w-[40vw] text-center bg-white rounded shadow"
+  >
+    <h1>LOGIN</h1>
+    <hr class="my-4 mt-0 w-50 mx-auto" />
+    <form (ngSubmit)="onSubmit(loginForm)" #loginForm="ngForm">
+      <!-- Admission Number Field -->
+      <div class="mb-3 relative">
+        <input
+          type="text"
+          class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [ngClass]="{
+            'border-danger': admissionNumber.invalid && admissionNumber.touched
+          }"
+          placeholder="Admission Number"
+          ngModel
+          name="admissionNumber"
+          required
+          minlength="4"
+          #admissionNumber="ngModel"
+        />
+        <!-- Validation Error Messages -->
+        <div
+          *ngIf="admissionNumber.invalid && admissionNumber.touched"
+          class="text-red-500 text-sm mt-1 text-left"
         >
-        <small *ngIf="password.errors?.['minlength']">
-          Password must be at least 6 characters long!
-        </small>
+          <small *ngIf="admissionNumber.errors?.['required']">
+            Admission number is required!
+          </small>
+          <small *ngIf="admissionNumber.errors?.['minlength']">
+            Admission number must be at least 4 characters long!
+          </small>
+        </div>
       </div>
-    </div>
 
-    <!-- Submit Button -->
-    <div id="login" class="loginbtn">
-      <button
-        type="submit"
-        class="btn btn-primary pointer-cursor"
-        [disabled]="loginForm.invalid"
-        [ngClass]="{
-          'disabled-cursor': loginForm.invalid,
-          'pointer-cursor': loginForm.valid
-        }"
+      <!-- Password Field -->
+      <div class="mb-3 relative">
+        <input
+          type="password"
+          class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [ngClass]="{ 'border-danger': password.invalid && password.touched }"
+          placeholder="Password"
+          ngModel
+          name="password"
+          required
+          minlength="6"
+          #password="ngModel"
+        />
+        <!-- Validation Error Messages -->
+        <div
+          *ngIf="password.invalid && password.touched"
+          class="text-red-500 text-sm mt-1 text-left"
+        >
+          <small *ngIf="password.errors?.['required']">
+            Password is required!
+          </small>
+          <small *ngIf="password.errors?.['minlength']">
+            Password must be at least 6 characters long!
+          </small>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="mt-4">
+        <button
+          type="submit"
+          class="bg-blue-500 text-white px-4 py-2 w-50 rounded"
+          [ngClass]="{ 'cursor-not-allowed opacity-50': loginForm.invalid }"
+          [disabled]="loginForm.invalid"
+        >
+          LOGIN
+        </button>
+      </div>
+    </form>
+    <div class="mt-4">
+      <a
+        [routerLink]="['/register']"
+        class="text-blue-500 hover:text-blue-600 text-decoration-none"
       >
-        LOGIN
-      </button>
+        Register Here
+      </a>
     </div>
-  </form>
-  <div class="register-link">
-    <a class="text-decoration-none" [routerLink]="['/register']">Register Here</a>
   </div>
 </div>
