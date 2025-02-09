@@ -1,6 +1,6 @@
-<div class="container shadow p-3 mb-5 bg-body-tertiary rounded">
+<div class="mt-5 p-5 mx-auto w-[75vw] sm:w-[80vw] md:w-[60vw] lg:w-[40vw] text-center bg-white rounded shadow">
     <h1>REGISTER</h1>
-    <hr />
+    <hr class="w-50 mx-auto mt-0 my-4" />
     <form [formGroup]="registerDetailsForm" (ngSubmit)="submit()">
       <div class="form-floating mb-3">
         <input
@@ -33,7 +33,11 @@
       </div>
   
       <div id="register" class="registerbtn">
-        <button type="submit" class="btn btn-primary" [disabled]="registerDetailsForm.invalid">
+        <button 
+        type="submit" 
+        class="bg-blue-500 mt-4 text-white px-4 py-2 w-50 rounded" 
+        [ngClass]="{ 'cursor-not-allowed opacity-50': registerDetailsForm.invalid}"
+        [disabled]="registerDetailsForm.invalid">
           REGISTER
         </button>
       </div>
