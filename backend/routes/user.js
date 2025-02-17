@@ -1,7 +1,13 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const connection = require("../connection");
 const router = express.Router();
+
+const SECRET_KEY = process.env.JWT_SECRET;
+var auth = require('../services/authservice');
+var { checkRole } = require('../services/checkRole');
+
 
 router.post("/register", async (req, res) => {
   try {
@@ -63,5 +69,74 @@ router.post("/register", async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 });
+
+router.post("/login", (req, res) => {
+    const { adm_no, password } = req.body;
+  
+    if (!adm_no || !password) {
+      return res.status(400).json({ message: "Admission number and password are required." });
+    }
+  
+    // Check if user exists
+    const query = "SELECT * FROM users WHERE adm_no = ?";
+    connection.query(query, [adm_no], (err, results) => {
+      if (err) return res.status(500).json(err);
+  
+      if (results.length === 0) {
+        return res.status(401).json({ message: "User not found." });
+      }
+  
+      const user = results[0];
+  
+      // Compare passwords
+      bcrypt.compare(password, user.password, (err, isMatch) => {
+        if (err) return res.status(500).json(err);
+  
+        if (!isMatch) {
+          return res.status(401).json({ message: "Invalid password." });
+        }
+  
+        // Generate JWT token
+        const token = jwt.sign(
+          { id: user.id, adm_no: user.adm_no, role: user.role },
+          SECRET_KEY,
+          { expiresIn: "1h" }
+        );
+  
+        res.status(200).json({ message: "Login successful!", token, user });
+      });
+    });
+  });
+
+  router.get("/get", auth.authToken, (req, res) => {
+    const { role } = res.locals; // Get the role from the JWT token
+    let query = "";
+    let identifier = "";
+  
+    // Check role and set the query accordingly
+    if (role === "student") {
+      identifier = res.locals.adm_no;  // adm_no from JWT token
+      query = "SELECT * FROM users WHERE adm_no = ?";
+    } else if (role === "teacher") {
+      identifier = res.locals.teacher_id;  // teacher_id from JWT token
+      query = "SELECT * FROM users WHERE teacher_id = ?";
+    } else {
+      return res.status(403).json({ message: "Unauthorized access." });
+    }
+  
+    // Execute the query based on role
+    connection.query(query, [identifier], (err, results) => {
+      if (err) return res.status(500).json({ message: "Error fetching user data", error: err });
+  
+      if (results.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      res.status(200).json(results[0]);
+    });
+  });
+  
+  
+
 
 module.exports = router;
