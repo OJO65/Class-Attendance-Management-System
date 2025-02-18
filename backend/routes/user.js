@@ -5,9 +5,8 @@ const connection = require("../connection");
 const router = express.Router();
 
 const SECRET_KEY = process.env.JWT_SECRET;
-var auth = require('../services/authservice');
-var { checkRole } = require('../services/checkRole');
-
+var auth = require("../services/authservice");
+var { checkRole } = require("../services/checkRole");
 
 router.post("/register", async (req, res) => {
   try {
@@ -71,72 +70,75 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/login", (req, res) => {
-    const { adm_no, password } = req.body;
-  
-    if (!adm_no || !password) {
-      return res.status(400).json({ message: "Admission number and password are required." });
-    }
-  
-    // Check if user exists
-    const query = "SELECT * FROM users WHERE adm_no = ?";
-    connection.query(query, [adm_no], (err, results) => {
-      if (err) return res.status(500).json(err);
-  
-      if (results.length === 0) {
-        return res.status(401).json({ message: "User not found." });
-      }
-  
-      const user = results[0];
-  
-      // Compare passwords
-      bcrypt.compare(password, user.password, (err, isMatch) => {
-        if (err) return res.status(500).json(err);
-  
-        if (!isMatch) {
-          return res.status(401).json({ message: "Invalid password." });
-        }
-  
-        // Generate JWT token
-        const token = jwt.sign(
-          { id: user.id, adm_no: user.adm_no, role: user.role },
-          SECRET_KEY,
-          { expiresIn: "1h" }
-        );
-  
-        res.status(200).json({ message: "Login successful!", token, user });
+  const { adm_no, password, teacher_id } = req.body;
+
+  if ((!adm_no && !teacher_id) || !password) {
+    return res
+      .status(400)
+      .json({
+        message: "Admission number or teacher_id and password are required.",
       });
-    });
-  });
+  }
 
-  router.get("/get", auth.authToken, (req, res) => {
-    const { role } = res.locals; // Get the role from the JWT token
-    let query = "";
-    let identifier = "";
-  
-    // Check role and set the query accordingly
-    if (role === "student") {
-      identifier = res.locals.adm_no;  // adm_no from JWT token
-      query = "SELECT * FROM users WHERE adm_no = ?";
-    } else if (role === "teacher") {
-      identifier = res.locals.teacher_id;  // teacher_id from JWT token
-      query = "SELECT * FROM users WHERE teacher_id = ?";
-    } else {
-      return res.status(403).json({ message: "Unauthorized access." });
+  let query, identifier;
+  if (adm_no) {
+    query = "SELECT * FROM users WHERE adm_no=?";
+    identifier = adm_no;
+  } else if (teacher_id) {
+    query = "SELECT * FROM users WHERE teacher_id=?";
+    identifier = teacher_id;
+  } else {
+    return res.status(400).json({ message: "Invalid request format." });
+  }
+
+  // Check if user exists
+  connection.query(query, [identifier], (err, results) => {
+    if (err) return res.status(500).json({ message: "Database error", error: err });
+
+    if (results.length === 0) {
+      return res.status(401).json({ message: "User not found." });
     }
-  
-    // Execute the query based on role
-    connection.query(query, [identifier], (err, results) => {
-      if (err) return res.status(500).json({ message: "Error fetching user data", error: err });
-  
-      if (results.length === 0) {
-        return res.status(404).json({ message: "User not found" });
+
+    const user = results[0];
+
+    // Compare passwords
+    bcrypt.compare(password, user.password, (err, isMatch) => {
+      if (err) return res.status(500).json(err);
+
+      if (!isMatch) {
+        return res.status(401).json({ message: "Invalid password." });
       }
-  
-      res.status(200).json(results[0]);
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { id: user.id, role: user.role },
+        SECRET_KEY,
+        { expiresIn: "1h" }
+      );
+
+      res.status(200).json({ message: "Login successful!", token, user });
     });
   });
-  
-  
+});
 
+router.get("/get", auth.authToken, (req, res) => {
+  const { role } = res.locals.user;
+
+  let query;
+  if (role === "teacher") {
+    query = "SELECT id, name, adm_no FROM USERS WHERE role = 'student'";
+  } else if (role === "student") {
+    query = "SELECT id, name, teacher_id FROM USERS WHERE role = 'teacher'";
+  } else {
+    return res.status(403).json({ message: "unauthorized role access" });
+  }
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Database error", error: err });
+    }
+    return res.status(200).json(results);
+  });
+});
 
 module.exports = router;
