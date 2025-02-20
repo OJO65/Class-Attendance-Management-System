@@ -73,11 +73,9 @@ router.post("/login", (req, res) => {
   const { adm_no, password, teacher_id } = req.body;
 
   if ((!adm_no && !teacher_id) || !password) {
-    return res
-      .status(400)
-      .json({
-        message: "Admission number or teacher_id and password are required.",
-      });
+    return res.status(400).json({
+      message: "Admission number or teacher_id and password are required.",
+    });
   }
 
   let query, identifier;
@@ -93,7 +91,8 @@ router.post("/login", (req, res) => {
 
   // Check if user exists
   connection.query(query, [identifier], (err, results) => {
-    if (err) return res.status(500).json({ message: "Database error", error: err });
+    if (err)
+      return res.status(500).json({ message: "Database error", error: err });
 
     if (results.length === 0) {
       return res.status(401).json({ message: "User not found." });
@@ -110,11 +109,9 @@ router.post("/login", (req, res) => {
       }
 
       // Generate JWT token
-      const token = jwt.sign(
-        { id: user.id, role: user.role },
-        SECRET_KEY,
-        { expiresIn: "1h" }
-      );
+      const token = jwt.sign({ id: user.id, role: user.role }, SECRET_KEY, {
+        expiresIn: "1h",
+      });
 
       res.status(200).json({ message: "Login successful!", token, user });
     });
@@ -139,6 +136,60 @@ router.get("/get", auth.authToken, (req, res) => {
     }
     return res.status(200).json(results);
   });
+});
+
+router.post("/changepassword", auth.authToken, async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const { id } = res.locals.user;
+
+  if (!oldPassword || !newPassword) {
+    return res
+      .status(400)
+      .json({ message: "Old and new passwords are required." });
+  }
+
+  try {
+    // 🔎 Fetch user details
+    connection.query(
+      "SELECT password FROM users WHERE id = ?",
+      [id],
+      async (err, results) => {
+        if (err)
+          return res
+            .status(500)
+            .json({ message: "Database error", error: err });
+        if (results.length === 0)
+          return res.status(404).json({ message: "User not found." });
+
+        const user = results[0];
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch)
+          return res
+            .status(401)
+            .json({ message: "Old password is incorrect." });
+
+        // 🔒 Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // 💾 Update password
+        connection.query(
+          "UPDATE users SET password = ? WHERE id = ?",
+          [hashedPassword, id],
+          (err, result) => {
+            if (err)
+              return res
+                .status(500)
+                .json({ message: "Failed to update password", error: err });
+            return res
+              .status(200)
+              .json({ message: "Password updated successfully!" });
+          }
+        );
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
 });
 
 module.exports = router;
