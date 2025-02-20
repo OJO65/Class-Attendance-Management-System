@@ -1,46 +1,86 @@
 <div class="mt-5 p-5 mx-auto w-[75vw] sm:w-[80vw] md:w-[60vw] lg:w-[40vw] text-center bg-white rounded shadow">
-    <h1>REGISTER</h1>
-    <hr class="w-50 mx-auto mt-0 my-4" />
-    <form [formGroup]="registerDetailsForm" (ngSubmit)="submit()">
-      <div class="form-floating mb-3">
-        <input
-          type="text"
-          formControlName="admissionNumber"
-          class="form-control"
-          id="floatingInput"
-          placeholder="Admission Number"
-          [ngClass]="{'is-invalid': fieldIsInvalid('admissionNumber')}"
-        />
-        <label for="floatingInput">Admission Number</label>
-        <div *ngIf="fieldIsInvalid('admissionNumber')" class="invalid-feedback">
-          Please enter a valid admission number!
-        </div>
+  <h1>REGISTER</h1>
+  <hr class="w-50 mx-auto mt-0 my-4" />
+  <form [formGroup]="registerDetailsForm" (ngSubmit)="submit()">
+    <div class="form-floating mb-3">
+      <input
+        type="text"
+        formControlName="name"
+        class="form-control"
+        placeholder="Full Name"
+        [ngClass]="{'is-invalid': fieldIsInvalid('name')}"
+      />
+      <label>Full Name</label>
+      <div *ngIf="fieldIsInvalid('name')" class="invalid-feedback">
+        Name is required!
       </div>
-  
-      <div class="form-floating mb-3">
-        <input
-          type="password"
-          formControlName="password"
-          class="form-control"
-          id="floatingPassword"
-          placeholder="Password"
-          [ngClass]="{'is-invalid': fieldIsInvalid('password')}"
-        />
-        <label for="floatingPassword">Password</label>
-        <div *ngIf="fieldIsInvalid('password')" class="invalid-feedback">
-          Password is required!
-        </div>
+    </div>
+
+    <div class="form-floating mb-3">
+      <select
+        formControlName="role"
+        class="form-control"
+        [ngClass]="{'is-invalid': fieldIsInvalid('role')}"
+      >
+        <option value="" disabled selected>Select Role</option>
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+      </select>
+      <label>Role</label>
+      <div *ngIf="fieldIsInvalid('role')" class="invalid-feedback">
+        Role is required!
       </div>
-  
-      <div id="register" class="registerbtn">
-        <button 
-        type="submit" 
-        class="bg-blue-500 mt-4 text-white px-4 py-2 w-50 rounded" 
-        [ngClass]="{ 'cursor-not-allowed opacity-50': registerDetailsForm.invalid}"
-        [disabled]="registerDetailsForm.invalid">
-          REGISTER
-        </button>
+    </div>
+
+    <div class="form-floating mb-3" *ngIf="registerDetailsForm.get('role')?.value === 'student'">
+      <input
+        type="text"
+        formControlName="adm_no"
+        class="form-control"
+        placeholder="Admission Number"
+        [ngClass]="{'is-invalid': fieldIsInvalid('adm_no')}"
+      />
+      <label>Admission Number</label>
+      <div *ngIf="fieldIsInvalid('adm_no')" class="invalid-feedback">
+        Admission number is required for students!
       </div>
-    </form>
-  </div>
-  
+    </div>
+
+    <div class="form-floating mb-3" *ngIf="registerDetailsForm.get('role')?.value === 'teacher'">
+      <input
+        type="text"
+        formControlName="teacher_id"
+        class="form-control"
+        placeholder="Teacher ID"
+        [ngClass]="{'is-invalid': fieldIsInvalid('teacher_id')}"
+      />
+      <label>Teacher ID</label>
+      <div *ngIf="fieldIsInvalid('teacher_id')" class="invalid-feedback">
+        Teacher ID is required for teachers!
+      </div>
+    </div>
+
+    <div class="form-floating mb-3">
+      <input
+        type="password"
+        formControlName="password"
+        class="form-control"
+        placeholder="Password"
+        [ngClass]="{'is-invalid': fieldIsInvalid('password')}"
+      />
+      <label>Password</label>
+      <div *ngIf="fieldIsInvalid('password')" class="invalid-feedback">
+        Password is required!
+      </div>
+    </div>
+
+    <button
+      type="submit"
+      class="bg-blue-500 mt-4 text-white px-4 py-2 w-50 rounded"
+      [ngClass]="{ 'cursor-not-allowed opacity-50': registerDetailsForm.invalid}"
+      [disabled]="registerDetailsForm.invalid"
+    >
+      REGISTER
+    </button>
+  </form>
+</div>
