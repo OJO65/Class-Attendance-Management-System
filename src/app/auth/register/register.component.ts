@@ -1,7 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -12,19 +18,33 @@ import { RouterModule, Router } from '@angular/router';
 export class RegisterComponent {
   private readonly _fb = inject(FormBuilder);
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private authService: AuthService) {}
 
   registerDetailsForm: FormGroup = this._fb.group({
-    admissionNumber: ['', Validators.required], // Validation: Admission number is required
-    password: ['', Validators.required], // Validation: Password is required
+    name: ['', Validators.required],
+    adm_no: ['', Validators.required],
+    password: ['', Validators.required],
+    teacher_id: [''],
+    role: [''],
   });
 
   submit() {
-    if (this.registerDetailsForm.valid) {
-      // Navigate to login if the form is valid
-      this.router.navigate(['/login']);
+    if(this.registerDetailsForm.valid) {
+      const userData = this.registerDetailsForm.value;
+      if(userData.role === 'student') delete userData.teacher_id;
+      if(userData.role === 'teacher') delete userData.adm_no;
+
+      this.authService.register(userData).subscribe({
+        next: (res) => {
+          console.log('Registration successful:', res);
+          this.router.navigate(['/login']);
+        },
+        error: (err) => {
+          console.error('Registration failed:', err);
+          alert(err.error.message || 'Registration failed.');
+        },
+      })
     } else {
-      // Mark all controls as touched if the form is invalid
       this.markFormControlsAsTouched();
     }
   }
@@ -35,7 +55,7 @@ export class RegisterComponent {
   }
 
   private markFormControlsAsTouched() {
-    Object.values(this.registerDetailsForm.controls).forEach(control => {
+    Object.values(this.registerDetailsForm.controls).forEach((control) => {
       control.markAsTouched();
     });
   }
