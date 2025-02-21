@@ -73,9 +73,11 @@ router.post("/login", (req, res) => {
   const { adm_no, password, teacher_id } = req.body;
 
   if ((!adm_no && !teacher_id) || !password) {
-    return res.status(400).json({
-      message: "Admission number or teacher_id and password are required.",
-    });
+    return res
+      .status(400)
+      .json({
+        message: "Admission number or teacher_id and password are required.",
+      });
   }
 
   let query, identifier;
@@ -91,8 +93,7 @@ router.post("/login", (req, res) => {
 
   // Check if user exists
   connection.query(query, [identifier], (err, results) => {
-    if (err)
-      return res.status(500).json({ message: "Database error", error: err });
+    if (err) return res.status(500).json({ message: "Database error", error: err });
 
     if (results.length === 0) {
       return res.status(401).json({ message: "User not found." });
@@ -109,9 +110,11 @@ router.post("/login", (req, res) => {
       }
 
       // Generate JWT token
-      const token = jwt.sign({ id: user.id, role: user.role }, SECRET_KEY, {
-        expiresIn: "1h",
-      });
+      const token = jwt.sign(
+        { id: user.id, role: user.role },
+        SECRET_KEY,
+        { expiresIn: "1h" }
+      );
 
       res.status(200).json({ message: "Login successful!", token, user });
     });
@@ -138,58 +141,76 @@ router.get("/get", auth.authToken, (req, res) => {
   });
 });
 
-router.post("/changepassword", auth.authToken, async (req, res) => {
+router.get("/teacher-dashboard", auth.authToken, checkRole("teacher"), (req, res) => {
+  const teacherId = res.locals.user.id;
+
+  const query = `
+    SELECT s.id, s.name, s.adm_no, a.attendance_date, a.status
+    FROM attendance a
+    JOIN users s ON a.student_id = s.id
+    WHERE a.teacher_id = ?
+    ORDER BY a.attendance_date DESC;
+  `;
+
+  connection.query(query, [teacherId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Database error", error: err });
+    }
+    res.status(200).json(results);
+  });
+});
+
+router.get("/student-dashboard", auth.authToken, checkRole("student"), (req, res) => {
+  const studentId = res.locals.user.id;
+
+  const query = `
+    SELECT a.attendance_date, a.status, t.name AS teacher_name
+    FROM attendance a
+    JOIN users t ON a.teacher_id = t.id
+    WHERE a.student_id = ?
+    ORDER BY a.attendance_date DESC;
+  `;
+
+  connection.query(query, [studentId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Database error", error: err });
+    }
+    res.status(200).json(results);
+  });
+});
+
+router.post("/change-password", auth.authToken, async (req, res) => {
+  const userId = res.locals.user.id;
   const { oldPassword, newPassword } = req.body;
-  const { id } = res.locals.user;
 
   if (!oldPassword || !newPassword) {
-    return res
-      .status(400)
-      .json({ message: "Old and new passwords are required." });
+    return res.status(400).json({ message: "Both old and new passwords are required." });
   }
 
-  try {
-    // 🔎 Fetch user details
-    connection.query(
-      "SELECT password FROM users WHERE id = ?",
-      [id],
-      async (err, results) => {
-        if (err)
-          return res
-            .status(500)
-            .json({ message: "Database error", error: err });
-        if (results.length === 0)
-          return res.status(404).json({ message: "User not found." });
+  const getUserQuery = "SELECT password FROM users WHERE id = ?";
+  connection.query(getUserQuery, [userId], async (err, results) => {
+    if (err) return res.status(500).json({ message: "Database error", error: err });
 
-        const user = results[0];
-        const isMatch = await bcrypt.compare(oldPassword, user.password);
-        if (!isMatch)
-          return res
-            .status(401)
-            .json({ message: "Old password is incorrect." });
+    if (results.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
-        // 🔒 Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const user = results[0];
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
 
-        // 💾 Update password
-        connection.query(
-          "UPDATE users SET password = ? WHERE id = ?",
-          [hashedPassword, id],
-          (err, result) => {
-            if (err)
-              return res
-                .status(500)
-                .json({ message: "Failed to update password", error: err });
-            return res
-              .status(200)
-              .json({ message: "Password updated successfully!" });
-          }
-        );
-      }
-    );
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error });
-  }
+    if (!isMatch) {
+      return res.status(401).json({ message: "Old password is incorrect." });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    const updateQuery = "UPDATE users SET password = ? WHERE id = ?";
+
+    connection.query(updateQuery, [hashedNewPassword, userId], (err) => {
+      if (err) return res.status(500).json({ message: "Error updating password", error: err });
+
+      res.status(200).json({ message: "Password changed successfully." });
+    });
+  });
 });
 
 module.exports = router;
