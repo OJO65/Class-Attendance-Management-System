@@ -2,43 +2,43 @@
   <div class="text-center lg:w-1/2 lg:mt-40">
     <h1>Class Attendance Management System</h1>
     <p>
-      CAMS helps you keep track of your class attendance and maintain a good
-      score!
+      CAMS helps you keep track of your class attendance and maintain a good score!
     </p>
   </div>
 
-  <div
-    class="mt-5 p-5 mx-auto w-[75vw] sm:w-[80vw] md:w-[60vw] lg:w-[40vw] text-center bg-white rounded shadow"
-  >
+  <div class="mt-5 p-5 mx-auto w-[75vw] sm:w-[80vw] md:w-[60vw] lg:w-[40vw] text-center bg-white rounded shadow">
     <h1>LOGIN</h1>
     <hr class="my-4 mt-0 w-50 mx-auto" />
-    <form (ngSubmit)="onSubmit(loginForm)" #loginForm="ngForm">
-      <!-- Admission Number Field -->
+    <form (ngSubmit)="onSubmit(loginForm)" #loginForm="ngForm" novalidate>
+      <!-- Role Selection -->
+      <div class="mb-3 relative">
+        <select
+          class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [(ngModel)]="selectedRole"
+          name="role"
+          required
+        >
+          <option value="student">Student</option>
+          <option value="teacher">Teacher</option>
+        </select>
+      </div>
+
+      <!-- ID Field (Dynamic based on role) -->
       <div class="mb-3 relative">
         <input
           type="text"
           class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          [ngClass]="{
-            'border-danger': admissionNumber.invalid && admissionNumber.touched
-          }"
-          placeholder="Admission Number"
-          ngModel
-          name="admissionNumber"
+          [ngClass]="{ 'border-danger': userIdModel.invalid && userIdModel.touched }"
+          [placeholder]="getPlaceholder()"
+          [(ngModel)]="userId"
+          [name]="dynamicFieldName"
           required
           minlength="4"
-          #admissionNumber="ngModel"
+          #userIdModel="ngModel"
         />
-        <!-- Validation Error Messages -->
-        <div
-          *ngIf="admissionNumber.invalid && admissionNumber.touched"
-          class="text-red-500 text-sm mt-1 text-left"
-        >
-          <small *ngIf="admissionNumber.errors?.['required']">
-            Admission number is required!
-          </small>
-          <small *ngIf="admissionNumber.errors?.['minlength']">
-            Admission number must be at least 4 characters long!
-          </small>
+        <div *ngIf="userIdModel.invalid && userIdModel.touched" class="text-red-500 text-sm mt-1 text-left">
+          <small *ngIf="userIdModel.errors?.['required']">{{ getPlaceholder() }} is required!</small>
+          <small *ngIf="userIdModel.errors?.['minlength']">{{ getPlaceholder() }} must be at least 4 characters long!</small>
         </div>
       </div>
 
@@ -47,25 +47,17 @@
         <input
           type="password"
           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          [ngClass]="{ 'border-danger': password.invalid && password.touched }"
+          [ngClass]="{ 'border-danger': passwordModel.invalid && passwordModel.touched }"
           placeholder="Password"
-          ngModel
+          [(ngModel)]="password"
           name="password"
           required
           minlength="6"
-          #password="ngModel"
+          #passwordModel="ngModel"
         />
-        <!-- Validation Error Messages -->
-        <div
-          *ngIf="password.invalid && password.touched"
-          class="text-red-500 text-sm mt-1 text-left"
-        >
-          <small *ngIf="password.errors?.['required']">
-            Password is required!
-          </small>
-          <small *ngIf="password.errors?.['minlength']">
-            Password must be at least 6 characters long!
-          </small>
+        <div *ngIf="passwordModel.invalid && passwordModel.touched" class="text-red-500 text-sm mt-1 text-left">
+          <small *ngIf="passwordModel.errors?.['required']">Password is required!</small>
+          <small *ngIf="passwordModel.errors?.['minlength']">Password must be at least 6 characters long!</small>
         </div>
       </div>
 
@@ -74,8 +66,8 @@
         <button
           type="submit"
           class="bg-blue-500 text-white px-4 py-2 w-50 rounded"
-          [ngClass]="{ 'cursor-not-allowed opacity-50': loginForm.invalid }"
           [disabled]="loginForm.invalid"
+          [ngClass]="{ 'cursor-not-allowed opacity-50': loginForm.invalid }"
         >
           LOGIN
         </button>
@@ -83,10 +75,10 @@
     </form>
     <div class="mt-4">
       <a
-        [routerLink]="['/register']"
+        [routerLink]="selectedRole === 'teacher' ? ['/register'] : ['/register']"
         class="text-blue-500 hover:text-blue-600 text-decoration-none"
       >
-        Register Here
+        {{ selectedRole === 'teacher' ? 'Register as Teacher' : 'Register as Student' }}
       </a>
     </div>
   </div>
