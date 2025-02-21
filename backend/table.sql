@@ -51,3 +51,19 @@ values
         'hashedpassword5',
         'student'
     );
+
+    CREATE TABLE attendance (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  teacher_id INT NOT NULL,
+  student_id INT NOT NULL,
+  attendance_date DATE NOT NULL,
+  status VARCHAR(10) NOT NULL,
+  FOREIGN KEY (teacher_id) REFERENCES users(id),
+  FOREIGN KEY (student_id) REFERENCES users(id)
+);
+
+INSERT INTO attendance (teacher_id, student_id, attendance_date, status)
+VALUES (2, 3, CURDATE(), 'Present'),
+       (2, 4, CURDATE(), 'Absent');
+       (2, 5, CURDATE(), 'Present');
+
