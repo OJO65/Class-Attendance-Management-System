@@ -8,6 +8,7 @@ const SECRET_KEY = process.env.JWT_SECRET;
 var auth = require("../services/authservice");
 var { checkRole } = require("../services/checkRole");
 
+//REGISTER API
 router.post("/register", async (req, res) => {
   try {
     const { name, adm_no, teacher_id, password, role } = req.body;
@@ -69,15 +70,14 @@ router.post("/register", async (req, res) => {
   }
 });
 
+//LOGIN API
 router.post("/login", (req, res) => {
   const { adm_no, password, teacher_id } = req.body;
 
   if ((!adm_no && !teacher_id) || !password) {
-    return res
-      .status(400)
-      .json({
-        message: "Admission number or teacher_id and password are required.",
-      });
+    return res.status(400).json({
+      message: "Admission number or teacher_id and password are required.",
+    });
   }
 
   let query, identifier;
@@ -93,7 +93,8 @@ router.post("/login", (req, res) => {
 
   // Check if user exists
   connection.query(query, [identifier], (err, results) => {
-    if (err) return res.status(500).json({ message: "Database error", error: err });
+    if (err)
+      return res.status(500).json({ message: "Database error", error: err });
 
     if (results.length === 0) {
       return res.status(401).json({ message: "User not found." });
@@ -110,17 +111,16 @@ router.post("/login", (req, res) => {
       }
 
       // Generate JWT token
-      const token = jwt.sign(
-        { id: user.id, role: user.role },
-        SECRET_KEY,
-        { expiresIn: "1h" }
-      );
+      const token = jwt.sign({ id: user.id, role: user.role }, SECRET_KEY, {
+        expiresIn: "1h",
+      });
 
       res.status(200).json({ message: "Login successful!", token, user });
     });
   });
 });
 
+//USER API
 router.get("/get", auth.authToken, (req, res) => {
   const { role } = res.locals.user;
 
@@ -141,10 +141,15 @@ router.get("/get", auth.authToken, (req, res) => {
   });
 });
 
-router.get("/teacher-dashboard", auth.authToken, checkRole("teacher"), (req, res) => {
-  const teacherId = res.locals.user.id;
+//TEACHER_DASHBOARD API
+router.get(
+  "/teacher-dashboard",
+  auth.authToken,
+  checkRole("teacher"),
+  (req, res) => {
+    const teacherId = res.locals.user.id;
 
-  const query = `
+    const query = `
     SELECT s.id, s.name, s.adm_no, a.attendance_date, a.status
     FROM attendance a
     JOIN users s ON a.student_id = s.id
@@ -152,18 +157,24 @@ router.get("/teacher-dashboard", auth.authToken, checkRole("teacher"), (req, res
     ORDER BY a.attendance_date DESC;
   `;
 
-  connection.query(query, [teacherId], (err, results) => {
-    if (err) {
-      return res.status(500).json({ message: "Database error", error: err });
-    }
-    res.status(200).json(results);
-  });
-});
+    connection.query(query, [teacherId], (err, results) => {
+      if (err) {
+        return res.status(500).json({ message: "Database error", error: err });
+      }
+      res.status(200).json(results);
+    });
+  }
+);
 
-router.get("/student-dashboard", auth.authToken, checkRole("student"), (req, res) => {
-  const studentId = res.locals.user.id;
+//STUDENT_DASHBOARD API
+router.get(
+  "/student-dashboard",
+  auth.authToken,
+  checkRole("student"),
+  (req, res) => {
+    const studentId = res.locals.user.id;
 
-  const query = `
+    const query = `
     SELECT a.attendance_date, a.status, t.name AS teacher_name
     FROM attendance a
     JOIN users t ON a.teacher_id = t.id
@@ -171,25 +182,30 @@ router.get("/student-dashboard", auth.authToken, checkRole("student"), (req, res
     ORDER BY a.attendance_date DESC;
   `;
 
-  connection.query(query, [studentId], (err, results) => {
-    if (err) {
-      return res.status(500).json({ message: "Database error", error: err });
-    }
-    res.status(200).json(results);
-  });
-});
+    connection.query(query, [studentId], (err, results) => {
+      if (err) {
+        return res.status(500).json({ message: "Database error", error: err });
+      }
+      res.status(200).json(results);
+    });
+  }
+);
 
+//CHANGE PASSWORD API
 router.post("/change-password", auth.authToken, async (req, res) => {
   const userId = res.locals.user.id;
   const { oldPassword, newPassword } = req.body;
 
   if (!oldPassword || !newPassword) {
-    return res.status(400).json({ message: "Both old and new passwords are required." });
+    return res
+      .status(400)
+      .json({ message: "Both old and new passwords are required." });
   }
 
   const getUserQuery = "SELECT password FROM users WHERE id = ?";
   connection.query(getUserQuery, [userId], async (err, results) => {
-    if (err) return res.status(500).json({ message: "Database error", error: err });
+    if (err)
+      return res.status(500).json({ message: "Database error", error: err });
 
     if (results.length === 0) {
       return res.status(404).json({ message: "User not found." });
@@ -206,7 +222,10 @@ router.post("/change-password", auth.authToken, async (req, res) => {
     const updateQuery = "UPDATE users SET password = ? WHERE id = ?";
 
     connection.query(updateQuery, [hashedNewPassword, userId], (err) => {
-      if (err) return res.status(500).json({ message: "Error updating password", error: err });
+      if (err)
+        return res
+          .status(500)
+          .json({ message: "Error updating password", error: err });
 
       res.status(200).json({ message: "Password changed successfully." });
     });
