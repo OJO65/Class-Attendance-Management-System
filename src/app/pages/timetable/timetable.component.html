@@ -1,1 +1,33 @@
-<p>timetable works!</p>
+<div class="p-5 bg-white shadow rounded-lg overflow-x-auto">
+  <h3 class="text-xl font-semibold mb-3">Timetable</h3>
+  <div *ngIf="loadingTimetable" class="text-center text-gray-500">
+    Loading timetable...
+  </div>
+  <table
+    *ngIf="!loadingTimetable && timetableData.length > 0"
+    class="table-auto w-full border-collapse border border-gray-300"
+  >
+    <thead>
+      <tr class="bg-gray-200 text-gray-700 text-center">
+        <th class="p-2">Day</th>
+        <th *ngFor="let time of timeSlots" class="p-2">
+          {{ time.start.slice(0, 5) }} - {{ time.end.slice(0, 5) }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let day of days; let dayIndex = index" class="text-center border-b">
+        <td class="p-2 font-semibold">{{ day }}</td>
+        <td
+          *ngFor="let slotIndex of [0, 1, 2, 3, 4]"
+          class="p-2 border border-gray-200"
+        >
+          {{ timetableData[dayIndex][slotIndex] }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p *ngIf="!loadingTimetable && timetableData?.length === 0" class="text-gray-500 text-center">
+    No timetable data available.
+  </p>
+</div>
