@@ -4,6 +4,7 @@ import { HomeComponent } from './pages/home/home.component';
 import { RegisterComponent } from './auth/register/register.component';
 import { TeacherDashboardComponent } from './pages/teacher-dashboard/teacher-dashboard.component';
 import { StudentDashboardComponent } from './pages/student-dashboard/student-dashboard.component';
+import { TimetableComponent } from './pages/timetable/timetable.component';
 
 export const routes: Routes = [{
     path: '',
@@ -29,5 +30,9 @@ export const routes: Routes = [{
 {
     path: 'student-dashboard',
     component: StudentDashboardComponent
+},
+{
+    path: 'timetable',
+    component: TimetableComponent
 }
 ];
