@@ -232,4 +232,20 @@ router.post("/change-password", auth.authToken, async (req, res) => {
   });
 });
 
+//TIMETABLE API
+router.get("/timetable", auth.authToken, checkRole("student"), (req, res) => {
+  const query = `
+    SELECT day, unit_name, start_time, end_time
+    FROM timetable
+    ORDER BY FIELD(day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'), start_time;
+  `;
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Database error", error: err });
+    }
+    res.status(200).json(results);
+  });
+});
+
 module.exports = router;
