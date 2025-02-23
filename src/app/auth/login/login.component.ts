@@ -39,7 +39,7 @@ export class LoginComponent {
           console.log('Login successful:', response);
           localStorage.setItem('token', response.token);
           this.router.navigate([
-            this.selectedRole === 'teacher' ? '/home' : '/home',
+            this.selectedRole === 'teacher' ? '/teacher-dashboard' : '/student-dashboard',
           ]);
         },
         error: (err) => {
@@ -52,5 +52,6 @@ export class LoginComponent {
     }
     form.resetForm({ role: this.selectedRole });
   }
+  
 }
 
