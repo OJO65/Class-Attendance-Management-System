@@ -1,38 +1,47 @@
 <div class="p-5 bg-white shadow rounded-lg">
-    <h2 class="text-2xl font-semibold mb-4">Student Dashboard</h2>
-  
-    <div *ngIf="loading" class="text-center text-gray-500">
-      Loading attendance records...
-    </div>
-  
-    <table *ngIf="!loading && attendanceData.length > 0" class="table-auto w-full border-collapse">
-      <thead>
-        <tr class="bg-gray-200 text-gray-700">
-          <th class="p-2">Teacher Name</th>
-          <th class="p-2">Date</th>
-          <th class="p-2">Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let record of attendanceData" class="text-center border-b">
-          <td class="p-2">{{ record.teacher_name }}</td>
-          <td class="p-2">{{ record.attendance_date | date: 'mediumDate' }}</td>
-          <td class="p-2">
-            <span
-              [ngClass]="{
-                'text-green-500': record.status === 'Present',
-                'text-red-500': record.status === 'Absent'
-              }"
-            >
-              {{ record.status }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  
-    <p *ngIf="!loading && attendanceData.length === 0" class="text-gray-500 text-center">
-      No attendance records available.
-    </p>
+  <h2 class="text-2xl font-semibold mb-4">Student Dashboard</h2>
+
+  <button
+    (click)="goToTimetable()"
+    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4"
+  >
+    View Timetable
+  </button>
+
+  <!-- Attendance Section -->
+  <h3 class="text-xl font-semibold mt-6 mb-3">Attendance Records</h3>
+  <div *ngIf="loadingAttendance" class="text-center text-gray-500">
+    Loading attendance records...
   </div>
-  
+  <table
+    *ngIf="!loadingAttendance && attendanceData.length > 0"
+    class="table-auto w-full border-collapse border border-gray-300"
+  >
+    <thead>
+      <tr class="bg-gray-200 text-gray-700 text-center">
+        <th class="p-2">Teacher Name</th>
+        <th class="p-2">Date</th>
+        <th class="p-2">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let record of attendanceData" class="text-center border-b">
+        <td class="p-2">{{ record.teacher_name }}</td>
+        <td class="p-2">{{ record.attendance_date | date: 'mediumDate' }}</td>
+        <td class="p-2">
+          <span
+            [ngClass]="{
+              'text-green-500': record.status === 'Present',
+              'text-red-500': record.status === 'Absent'
+            }"
+          >
+            {{ record.status }}
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p *ngIf="!loadingAttendance && attendanceData.length === 0" class="text-gray-500 text-center">
+    No attendance records available.
+  </p>
+</div>
