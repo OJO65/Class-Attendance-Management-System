@@ -175,8 +175,9 @@ router.get(
     const studentId = res.locals.user.id;
 
     const query = `
-    SELECT a.attendance_date, a.status, t.name AS teacher_name
+    SELECT s.id, s.name AS student_name, s.adm_no, a.attendance_date, a.status, t.name AS teacher_name
     FROM attendance a
+    JOIN users s ON a.student_id = s.id
     JOIN users t ON a.teacher_id = t.id
     WHERE a.student_id = ?
     ORDER BY a.attendance_date DESC;
