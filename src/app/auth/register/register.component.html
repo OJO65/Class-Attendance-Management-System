@@ -20,6 +20,7 @@
       <select
         formControlName="role"
         class="form-control"
+        (change)="onRoleChange()"
         [ngClass]="{'is-invalid': fieldIsInvalid('role')}"
       >
         <option value="" disabled selected>Select Role</option>
@@ -77,7 +78,7 @@
     <button
       type="submit"
       class="bg-blue-500 mt-4 text-white px-4 py-2 w-50 rounded"
-      [ngClass]="{ 'cursor-not-allowed opacity-50': registerDetailsForm.invalid}"
+      [ngClass]="{ 'cursor-not-allowed opacity-50': registerDetailsForm.invalid }"
       [disabled]="registerDetailsForm.invalid"
     >
       REGISTER

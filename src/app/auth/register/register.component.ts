@@ -22,17 +22,44 @@ export class RegisterComponent {
 
   registerDetailsForm: FormGroup = this._fb.group({
     name: ['', Validators.required],
-    adm_no: ['', Validators.required],
+    adm_no: [''],
     password: ['', Validators.required],
     teacher_id: [''],
-    role: [''],
+    role: ['', Validators.required],
   });
 
+  ngOnInit() {
+    this.onRoleChange(); // Ensure form is initialized with correct validators
+  }
+
+  // ✅ Dynamically handle validators based on role selection
+  onRoleChange() {
+    const role = this.registerDetailsForm.get('role')?.value;
+    const admNoControl = this.registerDetailsForm.get('adm_no');
+    const teacherIdControl = this.registerDetailsForm.get('teacher_id');
+
+    if (role === 'student') {
+      admNoControl?.setValidators([Validators.required]);
+      teacherIdControl?.clearValidators();
+    } else if (role === 'teacher') {
+      teacherIdControl?.setValidators([Validators.required]);
+      admNoControl?.clearValidators();
+    } else {
+      admNoControl?.clearValidators();
+      teacherIdControl?.clearValidators();
+    }
+
+    admNoControl?.updateValueAndValidity();
+    teacherIdControl?.updateValueAndValidity();
+  }
+
   submit() {
-    if(this.registerDetailsForm.valid) {
+    if (this.registerDetailsForm.valid) {
       const userData = this.registerDetailsForm.value;
-      if(userData.role === 'student') delete userData.teacher_id;
-      if(userData.role === 'teacher') delete userData.adm_no;
+
+      // ✅ Remove unnecessary fields based on role
+      if (userData.role === 'student') delete userData.teacher_id;
+      if (userData.role === 'teacher') delete userData.adm_no;
 
       this.authService.register(userData).subscribe({
         next: (res) => {
@@ -43,7 +70,7 @@ export class RegisterComponent {
           console.error('Registration failed:', err);
           alert(err.error.message || 'Registration failed.');
         },
-      })
+      });
     } else {
       this.markFormControlsAsTouched();
     }
