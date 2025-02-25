@@ -1,8 +1,8 @@
 import { Component, OnInit, AfterViewInit } from '@angular/core';
-import { HttpClient} from '@angular/common/http';
 import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { Chart, registerables} from 'chart.js';
 import { Router } from '@angular/router';
+import { AttendanceService } from '../../services/attendance.service';
 
 Chart.register(...registerables);
 
@@ -13,7 +13,6 @@ interface StudentAttendanceRecord {
   attendance_date: string;
   status: string;
   teacher_name: string;
-  lesson_name: string;
 }
 
 @Component({
@@ -24,14 +23,17 @@ interface StudentAttendanceRecord {
 })
 export class StudentDashboardComponent implements OnInit, AfterViewInit {
   attendanceData: StudentAttendanceRecord[] = [];
-  loadingAttendance: boolean = false;
+  loadingAttendance = false;
   pieChart: any;
-  attendanceGrade: string = '';
-  gradeDescription: string = '';
-  totalLessons: number = 0;
-  totalPresent: number = 0;
+  attendanceGrade = '';
+  gradeDescription = '';
+  totalLessons = 0;
+  totalPresent = 0;
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private attendanceService: AttendanceService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.fetchAttendanceData();
@@ -43,24 +45,24 @@ export class StudentDashboardComponent implements OnInit, AfterViewInit {
 
   fetchAttendanceData() {
     this.loadingAttendance = true;
-    this.http
-      .get<StudentAttendanceRecord[]>(
-        'http://localhost:8080/user/student-dashboard',
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-      )
-      .subscribe({
-        next: (data) => {
-          console.log('Attendance data:', data);
-          this.attendanceData = data;
-          this.loadingAttendance = false;
-          this.calculateGrade();
-          this.updatePieChart();
-        },
-        error: (err) => {
-          console.error('Error fetching attendance data:', err);
-          this.loadingAttendance = false;
-        },
-      });
+    this.attendanceService.getStudentAttendance().subscribe({
+      next: (data) => {
+        this.attendanceData = data;
+        this.loadingAttendance = false;
+        this.calculateGrade();
+        this.updatePieChart();
+      },
+      error: () => {
+        this.loadingAttendance = false;
+      },
+    });
+  }
+
+  markAttendance() {
+    this.attendanceService.markAttendance().subscribe({
+      next: () => this.fetchAttendanceData(),
+      error: (err) => console.error('Error marking attendance:', err),
+    });
   }
 
   initializePieChart() {
@@ -110,7 +112,6 @@ export class StudentDashboardComponent implements OnInit, AfterViewInit {
   updatePieChart() {
     if (this.pieChart) {
       const absentCount = this.totalLessons - this.totalPresent;
-
       this.pieChart.data.datasets[0].data = [this.totalPresent, absentCount];
       this.pieChart.update();
     }
