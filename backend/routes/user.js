@@ -254,13 +254,15 @@ router.get("/timetable", auth.authToken, checkRole("student"), (req, res) => {
 router.post("/attendance/mark", auth.authToken, checkRole("student"), (req, res) => {
   const studentId = res.locals.user.id;
 
-  const teacherQuery = "SELECT id AS teacher_id FROM users WHERE role = 'teacher' LIMIT 1";
+  // Get a teacher ID
+  const teacherQuery = "SELECT id FROM users WHERE role = 'teacher' LIMIT 1";
   connection.query(teacherQuery, (err, teacherResult) => {
     if (err || teacherResult.length === 0) {
       return res.status(500).json({ message: "Teacher not found.", error: err });
     }
 
-    const teacherId = teacherResult[0].teacher_id;
+    // Change this line - use id instead of teacher_id
+    const teacherId = teacherResult[0].id;
     const attendanceDate = new Date().toISOString().split("T")[0];
 
     const checkQuery = `SELECT * FROM attendance WHERE student_id = ? AND attendance_date = ?`;
@@ -304,5 +306,30 @@ dailyCron = cron.schedule("59 23 * * *", () => {
 });
 
 dailyCron.start();
+
+// GET STUDENT ATTENDANCE API
+router.get("/attendance/student-dashboard", auth.authToken, checkRole("student"), (req, res) => {
+  const studentId = res.locals.user.id;
+
+  const attendanceQuery = `
+    SELECT a.attendance_date, a.status, 
+           s.name AS student_name,
+           s.adm_no,
+           t.name AS teacher_name
+    FROM attendance a
+    JOIN users s ON a.student_id = s.id
+    JOIN users t ON a.teacher_id = t.id
+    WHERE a.student_id = ?
+    ORDER BY a.attendance_date DESC;
+  `;
+
+  connection.query(attendanceQuery, [studentId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Error retrieving attendance records.", error: err });
+    }
+    // Return results directly instead of wrapping them in an object
+    res.status(200).json(results);
+  });
+});
 
 module.exports = router;
