@@ -29,6 +29,7 @@ export class StudentDashboardComponent implements OnInit, AfterViewInit {
   gradeDescription = '';
   totalLessons = 0;
   totalPresent = 0;
+  errorMessage = '';
 
   constructor(
     private attendanceService: AttendanceService,
@@ -40,46 +41,92 @@ export class StudentDashboardComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.initializePieChart();
+    setTimeout(() => {
+      this.initializePieChart();
+    }, 100);
   }
 
   fetchAttendanceData() {
     this.loadingAttendance = true;
+    this.errorMessage = '';
+    
     this.attendanceService.getStudentAttendance().subscribe({
-      next: (data) => {
-        this.attendanceData = data;
+      next: (response) => {
+        console.log('API Response:', response);
+        
+        // Handle different response formats
+        if (Array.isArray(response)) {
+          this.attendanceData = response;
+        } else if (response && response.attendance && Array.isArray(response.attendance)) {
+          this.attendanceData = response.attendance;
+        } else {
+          this.attendanceData = [];
+          this.errorMessage = 'Unexpected data format from server';
+          console.error('Unexpected response format:', response);
+        }
+        
         this.loadingAttendance = false;
         this.calculateGrade();
         this.updatePieChart();
       },
-      error: () => {
+      error: (error) => {
+        console.error('Error fetching attendance data:', error);
         this.loadingAttendance = false;
+        this.errorMessage = error.status === 404 
+          ? 'Could not connect to attendance service. Please check if the server is running.'
+          : `Error: ${error.message || 'Unknown error'}`;
       },
     });
   }
 
   markAttendance() {
     this.attendanceService.markAttendance().subscribe({
-      next: () => this.fetchAttendanceData(),
-      error: (err) => console.error('Error marking attendance:', err),
+      next: (response) => {
+        console.log('Attendance marked:', response);
+        this.fetchAttendanceData(); // Refresh data after marking attendance
+      },
+      error: (err) => {
+        console.error('Error marking attendance:', err);
+        this.errorMessage = err.error?.message || 'Failed to mark attendance';
+      },
     });
   }
 
   initializePieChart() {
-    this.pieChart = new Chart('attendancePieChart', {
-      type: 'pie',
-      data: {
-        labels: ['Present', 'Absent'],
-        datasets: [
-          {
+    // Get the canvas element
+    const canvas = document.getElementById('attendancePieChart') as HTMLCanvasElement;
+    
+    if (!canvas) {
+      console.error('Canvas element not found!');
+      return;
+    }
+    
+    try {
+      // Create the new chart
+      this.pieChart = new Chart(canvas, {
+        type: 'pie',
+        data: {
+          labels: ['Present', 'Absent'],
+          datasets: [{
             label: 'Attendance Status',
-            data: [0, 0],
+            data: [0, 0], // Initialize with zeros, will update later
             backgroundColor: ['#10B981', '#EF4444'],
-            hoverOffset: 4,
-          },
-        ],
-      },
-    });
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+      
+      // Update with actual data if available
+      if (this.totalLessons > 0) {
+        this.updatePieChart();
+      }
+    } catch (error) {
+      console.error('Error creating chart:', error);
+    }
   }
 
   calculateGrade() {
@@ -111,12 +158,13 @@ export class StudentDashboardComponent implements OnInit, AfterViewInit {
 
   updatePieChart() {
     if (this.pieChart) {
+      const presentCount = this.totalPresent;
       const absentCount = this.totalLessons - this.totalPresent;
-      this.pieChart.data.datasets[0].data = [this.totalPresent, absentCount];
+      
+      this.pieChart.data.datasets[0].data = [presentCount, absentCount];
       this.pieChart.update();
     }
   }
-
   goToTimetable() {
     this.router.navigate(['/timetable']);
   }
