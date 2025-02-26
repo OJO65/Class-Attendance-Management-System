@@ -6,12 +6,13 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class AttendanceService {
-  private baseUrl = 'http://localhost:8080/attendance';
+  // This matches your Express setup - routes are mounted at /user
+  private baseUrl = 'http://localhost:8080/user';
 
   constructor(private http: HttpClient) {}
 
   getStudentAttendance(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/student-dashboard`, {
+    return this.http.get(`${this.baseUrl}/attendance/student-dashboard`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
   }
@@ -22,7 +23,7 @@ export class AttendanceService {
       Authorization: `Bearer ${localStorage.getItem('token')}`,
     });
     return this.http.post(
-      `${this.baseUrl}/mark`,
+      `${this.baseUrl}/attendance/mark`,
       {},
       { headers }
     );
