@@ -332,4 +332,288 @@ router.get("/attendance/student-dashboard", auth.authToken, checkRole("student")
   });
 });
 
+
+// WEEKLY REPORT API
+router.get(
+  "/weekly-report",
+  auth.authToken,
+  (req, res) => {
+    const userId = res.locals.user.id;
+    const userRole = res.locals.user.role; // Changed from res.locals.userRole
+    
+    // Get the start and end dates for the current week
+    // Default to current week if not specified
+    let { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      // Calculate current week (Monday to Sunday)
+      const today = new Date();
+      const day = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
+      
+      // Calculate the date of Monday (start of week)
+      const mondayOffset = day === 0 ? -6 : 1 - day; // If today is Sunday, go back 6 days
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + mondayOffset);
+      
+      // Calculate the date of Sunday (end of week)
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      
+      // Format dates as YYYY-MM-DD
+      startDate = monday.toISOString().split('T')[0];
+      endDate = sunday.toISOString().split('T')[0];
+    }
+
+    // Customize query based on user role
+    let query;
+    let queryParams;
+
+    if (userRole === 'student') {
+      // For students, only show their own data
+      query = `
+        SELECT 
+          u.id AS student_id,
+          u.name AS student_name,
+          u.adm_no,
+          (
+            SELECT COUNT(*) 
+            FROM attendance 
+            WHERE student_id = u.id 
+            AND attendance_date BETWEEN ? AND ?
+            AND status = 'Present'
+          ) AS days_present,
+          (
+            SELECT COUNT(*) 
+            FROM attendance 
+            WHERE student_id = u.id 
+            AND attendance_date BETWEEN ? AND ?
+            AND status = 'Absent'
+          ) AS days_absent
+        FROM 
+          users u
+        WHERE 
+          u.id = ?
+        LIMIT 1;
+      `;
+      queryParams = [startDate, endDate, startDate, endDate, userId];
+    } else {
+      // For teachers, show all students
+      query = `
+        SELECT 
+          u.id AS student_id,
+          u.name AS student_name,
+          u.adm_no,
+          (
+            SELECT COUNT(*) 
+            FROM attendance 
+            WHERE student_id = u.id 
+            AND attendance_date BETWEEN ? AND ?
+            AND status = 'Present'
+          ) AS days_present,
+          (
+            SELECT COUNT(*) 
+            FROM attendance 
+            WHERE student_id = u.id 
+            AND attendance_date BETWEEN ? AND ?
+            AND status = 'Absent'
+          ) AS days_absent
+        FROM 
+          users u
+        WHERE 
+          u.role = 'student'
+        ORDER BY 
+          u.name;
+      `;
+      queryParams = [startDate, endDate, startDate, endDate];
+    }
+    
+    connection.query(
+      query, 
+      queryParams,
+      (err, studentResults) => {
+        if (err) {
+          return res.status(500).json({ 
+            message: "Error generating weekly report", 
+            error: err 
+          });
+        }
+        
+        // Calculate overall statistics
+        const totalStudents = studentResults.length;
+        const totalDays = 5; // Assuming 5 school days per week
+        
+        let perfectAttendance = 0;
+        let absentOneOrMoreDays = 0;
+        let totalAttendanceRate = 0;
+        
+        const studentAttendance = studentResults.map(student => {
+          const daysPresent = student.days_present || 0;
+          const daysAbsent = student.days_absent || 0;
+          const attendanceRate = totalDays > 0 ? (daysPresent / totalDays) * 100 : 0;
+          
+          if (daysPresent === totalDays) {
+            perfectAttendance++;
+          }
+          
+          if (daysAbsent > 0) {
+            absentOneOrMoreDays++;
+          }
+          
+          totalAttendanceRate += attendanceRate;
+          
+          return {
+            student_id: student.student_id,
+            student_name: student.student_name,
+            adm_no: student.adm_no,
+            days_present: daysPresent,
+            days_absent: daysAbsent,
+            attendance_rate: Math.round(attendanceRate * 10) / 10 // Round to 1 decimal place
+          };
+        });
+        
+        // Prepare the report
+        const weeklyReport = {
+          report_period: {
+            start_date: startDate,
+            end_date: endDate
+          },
+          summary: {
+            total_students: totalStudents,
+            perfect_attendance_count: perfectAttendance,
+            perfect_attendance_percentage: totalStudents > 0 ? (perfectAttendance / totalStudents) * 100 : 0,
+            absent_one_or_more_days: absentOneOrMoreDays,
+            overall_attendance_rate: totalStudents > 0 ? Math.round((totalAttendanceRate / totalStudents) * 10) / 10 : 0
+          },
+          student_attendance: studentAttendance
+        };
+        
+        res.status(200).json(weeklyReport);
+      }
+    );
+  }
+);
+
+// To allow generation of reports for all students (available to teachers)
+router.get(
+  "/weekly-report/all",
+  auth.authToken,
+  checkRole("teacher"), // Using existing teacher role instead of creating admin
+  (req, res) => {
+    // Get the start and end dates for the current week
+    let { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      // Calculate current week (Monday to Sunday)
+      const today = new Date();
+      const day = today.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + mondayOffset);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      
+      startDate = monday.toISOString().split('T')[0];
+      endDate = sunday.toISOString().split('T')[0];
+    }
+
+    // Get overall school attendance stats and detailed attendance by class/teacher
+    const query = `
+      SELECT 
+        t.id AS teacher_id,
+        t.name AS teacher_name,
+        COUNT(DISTINCT s.id) AS student_count,
+        COUNT(DISTINCT CASE WHEN a.status = 'Present' THEN a.id END) AS present_count,
+        COUNT(DISTINCT CASE WHEN a.status = 'Absent' THEN a.id END) AS absent_count
+      FROM 
+        users t
+      LEFT JOIN 
+        attendance a ON t.id = a.teacher_id AND a.attendance_date BETWEEN ? AND ?
+      LEFT JOIN 
+        users s ON a.student_id = s.id AND s.role = 'student'
+      WHERE 
+        t.role = 'teacher'
+      GROUP BY 
+        t.id;
+    `;
+    
+    connection.query(
+      query, 
+      [startDate, endDate],
+      (err, teacherResults) => {
+        if (err) {
+          return res.status(500).json({ 
+            message: "Error generating school-wide weekly report", 
+            error: err 
+          });
+        }
+        
+        // Get the daily attendance trends
+        const dailyTrendsQuery = `
+          SELECT 
+            a.attendance_date,
+            COUNT(CASE WHEN a.status = 'Present' THEN 1 END) AS present_count,
+            COUNT(CASE WHEN a.status = 'Absent' THEN 1 END) AS absent_count
+          FROM 
+            attendance a
+          WHERE 
+            a.attendance_date BETWEEN ? AND ?
+          GROUP BY 
+            a.attendance_date
+          ORDER BY 
+            a.attendance_date;
+        `;
+        
+        connection.query(
+          dailyTrendsQuery,
+          [startDate, endDate],
+          (err, dailyResults) => {
+            if (err) {
+              return res.status(500).json({ 
+                message: "Error generating daily attendance trends", 
+                error: err 
+              });
+            }
+            
+            // Prepare the school-wide report
+            const schoolReport = {
+              report_period: {
+                start_date: startDate,
+                end_date: endDate
+              },
+              school_summary: {
+                total_teachers: teacherResults.length,
+                total_students: teacherResults.reduce((sum, teacher) => sum + (teacher.student_count || 0), 0),
+                overall_attendance_rate: calculateAttendanceRate(
+                  teacherResults.reduce((sum, teacher) => sum + (teacher.present_count || 0), 0),
+                  teacherResults.reduce((sum, teacher) => sum + ((teacher.present_count || 0) + (teacher.absent_count || 0)), 0)
+                )
+              },
+              daily_trends: dailyResults.map(day => ({
+                date: day.attendance_date,
+                present_count: day.present_count || 0,
+                absent_count: day.absent_count || 0,
+                attendance_rate: calculateAttendanceRate(day.present_count || 0, (day.present_count || 0) + (day.absent_count || 0))
+              })),
+              teacher_summaries: teacherResults.map(teacher => ({
+                teacher_id: teacher.teacher_id,
+                teacher_name: teacher.teacher_name,
+                student_count: teacher.student_count || 0,
+                attendance_rate: calculateAttendanceRate(teacher.present_count || 0, (teacher.present_count || 0) + (teacher.absent_count || 0))
+              }))
+            };
+            
+            res.status(200).json(schoolReport);
+          }
+        );
+      }
+    );
+  }
+);
+
+// Helper function to calculate attendance rate
+function calculateAttendanceRate(presentCount, totalCount) {
+  if (totalCount === 0) return 0;
+  return Math.round((presentCount / totalCount) * 1000) / 10; // Round to 1 decimal place
+}
+
 module.exports = router;
