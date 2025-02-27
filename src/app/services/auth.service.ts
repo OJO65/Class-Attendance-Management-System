@@ -18,7 +18,8 @@ export class AuthService {
         if (response.token) {
           localStorage.setItem('token', response.token);
           localStorage.setItem('role', response.user.role);
-
+          localStorage.setItem('user', JSON.stringify(response.user)); // Store the whole user object
+  
           if (response.user.role === 'teacher') {
             this.router.navigate(['/teacher-dashboard']);
           } else if (response.user.role === 'student') {
@@ -28,7 +29,6 @@ export class AuthService {
       })
     );
   }
-
   register(userData: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/register`, userData);
   }
