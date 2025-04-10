@@ -27,4 +27,8 @@ export class NavbarComponent {
       return null;
     }
   }
+  getDashboardRoute(): string {
+    const role = this.getUserRole();
+    return role === 'teacher' ? '/teacher-dashboard' : '/student-dashboard';
+  }
 }
