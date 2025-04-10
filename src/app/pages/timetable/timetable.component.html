@@ -18,14 +18,12 @@
     <tbody>
       <tr *ngFor="let day of days; let dayIndex = index" class="text-center border-b">
         <td class="p-2 font-semibold">{{ day }}</td>
-        <td
-          *ngFor="let slotIndex of [0, 1, 2, 3, 4]"
-          class="p-2 border border-gray-200"
-        >
-          {{ timetableData[dayIndex][slotIndex] }}
+        <td *ngFor="let slot of timetableData[dayIndex]" class="p-2 border border-gray-200">
+          {{ slot }}
         </td>
       </tr>
     </tbody>
+    
   </table>
   <p *ngIf="!loadingTimetable && timetableData?.length === 0" class="text-gray-500 text-center">
     No timetable data available.
