@@ -45,26 +45,25 @@ export class TimetableComponent implements OnInit {
   }
 
   formatTimetable(data: any[]): any[][] {
-    const formatted: any[][] = Array.from({ length: this.timeSlots.length }, () =>
-      Array(this.days.length).fill('Free')
+    const formatted: any[][] = Array.from({ length: this.days.length }, () =>
+      Array(this.timeSlots.length).fill('Free')
     );
-
+  
     data.forEach((lesson) => {
       const dayIndex = this.days.findIndex((d) => d === lesson.day);
-      const startTimeIndex = this.timeSlots.findIndex(
-        (slot) => slot.start === lesson.start_time
-      );
-      const endTimeIndex = this.timeSlots.findIndex(
-        (slot) => slot.end === lesson.end_time
-      );
-
-      if (dayIndex >= 0 && startTimeIndex >= 0 && endTimeIndex >= 0 && lesson.unit_name) {
-        for (let i = startTimeIndex; i <= endTimeIndex; i++) {
-          formatted[i][dayIndex] = lesson.unit_name;
+  
+      this.timeSlots.forEach((slot, slotIndex) => {
+        // Check if lesson overlaps this time slot
+        if (
+          lesson.start_time < slot.end &&
+          lesson.end_time > slot.start
+        ) {
+          formatted[dayIndex][slotIndex] = lesson.unit_name;
         }
-      }
+      });
     });
-
+  
     return formatted;
   }
+  
 }
